@@ -1,0 +1,643 @@
+{
+  "domain": "数据工程",
+  "subdirection": "数据采集、爬虫与RPA",
+  "app_name": "零售货架陈列图像稽核采集平台",
+  "app_slug": "shelf-audit-collector",
+  "app_desc": "采集货架陈列图像，完成去重、检测、识别与排面计数，对照陈列标准输出缺货价签差异与证据包的图像稽核采集平台",
+  "frontend": "vue",
+  "backend": "python",
+  "port_frontend": 5173,
+  "port_backend": 8000,
+  "modules": [
+    {
+      "key": "store_list",
+      "name": "门店名录",
+      "entity": "门店条目",
+      "fields": [
+        "门店编号",
+        "门店名称",
+        "所属区域",
+        "巡检频率",
+        "联系人标识"
+      ],
+      "statuses": [
+        "待建档",
+        "已建档",
+        "已闭店"
+      ],
+      "actions": [
+        "建档门店",
+        "闭店门店"
+      ],
+      "action_targets": [
+        "已建档",
+        "已闭店"
+      ],
+      "metrics": [
+        "门店总数",
+        "已建档门店",
+        "已闭店门店"
+      ],
+      "desc": "维护稽核门店名录与巡检频率",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "shelf_task",
+      "name": "货架稽核任务",
+      "entity": "稽核任务",
+      "fields": [
+        "任务编号",
+        "门店标识",
+        "巡检日期",
+        "货架区段",
+        "任务状态"
+      ],
+      "statuses": [
+        "待派单",
+        "已派单",
+        "已采集",
+        "已归档"
+      ],
+      "actions": [
+        "派发任务",
+        "确认采集",
+        "归档任务"
+      ],
+      "action_targets": [
+        "已派单",
+        "已采集",
+        "已归档"
+      ],
+      "metrics": [
+        "任务总数",
+        "已采集任务",
+        "已归档任务"
+      ],
+      "desc": "派发货架稽核任务并跟踪采集进度",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "image_upload",
+      "name": "图像上传通道",
+      "entity": "上传批次",
+      "fields": [
+        "批次编号",
+        "任务标识",
+        "图像张数",
+        "平均分辨率",
+        "上传通道"
+      ],
+      "statuses": [
+        "上传中",
+        "已上传",
+        "已退回"
+      ],
+      "actions": [
+        "确认上传",
+        "退回批次"
+      ],
+      "action_targets": [
+        "已上传",
+        "已退回"
+      ],
+      "metrics": [
+        "批次总数",
+        "已上传批次",
+        "已退回批次"
+      ],
+      "desc": "按批次接收货架图像并校验分辨率",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "image_dedup",
+      "name": "图像去重",
+      "entity": "去重记录",
+      "fields": [
+        "记录编号",
+        "图像指纹",
+        "相似簇号",
+        "保留标记",
+        "比对阈值"
+      ],
+      "statuses": [
+        "待比对",
+        "已去重",
+        "已合并"
+      ],
+      "actions": [
+        "执行比对",
+        "合并簇"
+      ],
+      "action_targets": [
+        "已去重",
+        "已合并"
+      ],
+      "metrics": [
+        "记录总数",
+        "已去重记录",
+        "已合并记录"
+      ],
+      "desc": "按图像指纹完成重复图像去重与合并",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "shelf_detect",
+      "name": "货架检测",
+      "entity": "检测记录",
+      "fields": [
+        "记录编号",
+        "图像指纹",
+        "层板数",
+        "检测置信",
+        "框选坐标"
+      ],
+      "statuses": [
+        "待检测",
+        "已检测",
+        "复检中"
+      ],
+      "actions": [
+        "执行检测",
+        "提交复检"
+      ],
+      "action_targets": [
+        "已检测",
+        "复检中"
+      ],
+      "metrics": [
+        "记录总数",
+        "已检测记录",
+        "复检中记录"
+      ],
+      "desc": "检测货架层板与商品陈列区域",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "sku_recognize",
+      "name": "商品识别",
+      "entity": "识别记录",
+      "fields": [
+        "记录编号",
+        "陈列区域",
+        "候选商品码",
+        "识别置信",
+        "复核标记"
+      ],
+      "statuses": [
+        "待识别",
+        "已识别",
+        "低置信"
+      ],
+      "actions": [
+        "执行识别",
+        "转人工"
+      ],
+      "action_targets": [
+        "已识别",
+        "低置信"
+      ],
+      "metrics": [
+        "记录总数",
+        "已识别记录",
+        "低置信记录"
+      ],
+      "desc": "识别陈列商品并标记低置信样本转人工",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "facing_count",
+      "name": "排面计数",
+      "entity": "计数记录",
+      "fields": [
+        "记录编号",
+        "陈列区域",
+        "商品码",
+        "排面数",
+        "计数版本"
+      ],
+      "statuses": [
+        "草稿",
+        "已确认",
+        "已修正"
+      ],
+      "actions": [
+        "确认计数",
+        "修正计数"
+      ],
+      "action_targets": [
+        "已确认",
+        "已修正"
+      ],
+      "metrics": [
+        "记录总数",
+        "已确认记录",
+        "已修正记录"
+      ],
+      "desc": "统计各商品码的排面数并维护计数版本",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "planogram_lib",
+      "name": "陈列标准库",
+      "entity": "陈列标准",
+      "fields": [
+        "标准编号",
+        "货架区段",
+        "商品码序列",
+        "排面下限",
+        "生效版本"
+      ],
+      "statuses": [
+        "草稿",
+        "已生效",
+        "已下线"
+      ],
+      "actions": [
+        "生效标准",
+        "下线标准"
+      ],
+      "action_targets": [
+        "已生效",
+        "已下线"
+      ],
+      "metrics": [
+        "标准总数",
+        "已生效标准",
+        "已下线标准"
+      ],
+      "desc": "维护货架陈列标准与排面下限",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "gap_check",
+      "name": "缺货检查",
+      "entity": "缺货记录",
+      "fields": [
+        "记录编号",
+        "陈列区域",
+        "缺货商品码",
+        "空位数量",
+        "发现时间"
+      ],
+      "statuses": [
+        "已发现",
+        "已确认",
+        "已补货"
+      ],
+      "actions": [
+        "确认缺货",
+        "标记补货"
+      ],
+      "action_targets": [
+        "已确认",
+        "已补货"
+      ],
+      "metrics": [
+        "记录总数",
+        "已确认记录",
+        "已补货记录"
+      ],
+      "desc": "对照陈列标准发现并确认缺货空位",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "price_tag_check",
+      "name": "价签核对",
+      "entity": "价签记录",
+      "fields": [
+        "记录编号",
+        "陈列位置",
+        "标价金额",
+        "系统金额",
+        "核对结论"
+      ],
+      "statuses": [
+        "待核对",
+        "已核对",
+        "差异待处理"
+      ],
+      "actions": [
+        "执行核对",
+        "标记差异"
+      ],
+      "action_targets": [
+        "已核对",
+        "差异待处理"
+      ],
+      "metrics": [
+        "记录总数",
+        "已核对记录",
+        "差异记录"
+      ],
+      "desc": "核对陈列价签与系统价格的一致性",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "audit_result",
+      "name": "稽核结果汇总",
+      "entity": "稽核结论",
+      "fields": [
+        "结论编号",
+        "任务标识",
+        "达标项数",
+        "违例项数",
+        "结论版本"
+      ],
+      "statuses": [
+        "待汇总",
+        "已汇总",
+        "已复核"
+      ],
+      "actions": [
+        "执行汇总",
+        "提交复核"
+      ],
+      "action_targets": [
+        "已汇总",
+        "已复核"
+      ],
+      "metrics": [
+        "结论总数",
+        "已汇总结论",
+        "已复核结论"
+      ],
+      "desc": "汇总各任务稽核结论并管理版本",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "audit_review",
+      "name": "人工复核台",
+      "entity": "复核事项",
+      "fields": [
+        "事项编号",
+        "争议记录",
+        "机器结论",
+        "人工结论",
+        "复核状态"
+      ],
+      "statuses": [
+        "待复核",
+        "复核中",
+        "已裁定"
+      ],
+      "actions": [
+        "开始复核",
+        "提交裁定"
+      ],
+      "action_targets": [
+        "复核中",
+        "已裁定"
+      ],
+      "metrics": [
+        "事项总数",
+        "复核中事项",
+        "已裁定事项"
+      ],
+      "desc": "组织低置信识别与争议稽核的人工复核",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "field_route",
+      "name": "巡检路线规划",
+      "entity": "路线记录",
+      "fields": [
+        "路线编号",
+        "区域集合",
+        "门店顺序",
+        "预计时长",
+        "生效标记"
+      ],
+      "statuses": [
+        "草稿",
+        "已生效",
+        "已调整"
+      ],
+      "actions": [
+        "生效路线",
+        "调整路线"
+      ],
+      "action_targets": [
+        "已生效",
+        "已调整"
+      ],
+      "metrics": [
+        "路线总数",
+        "已生效路线",
+        "已调整路线"
+      ],
+      "desc": "规划巡检路线与门店顺序",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "device_mgr",
+      "name": "采集设备管理",
+      "entity": "采集设备",
+      "fields": [
+        "设备编号",
+        "设备型号",
+        "绑定巡检员",
+        "固件版本",
+        "在线状态"
+      ],
+      "statuses": [
+        "待绑定",
+        "在线",
+        "离线"
+      ],
+      "actions": [
+        "绑定设备",
+        "标记离线"
+      ],
+      "action_targets": [
+        "在线",
+        "离线"
+      ],
+      "metrics": [
+        "设备总数",
+        "在线设备",
+        "离线设备"
+      ],
+      "desc": "管理采集设备绑定与在线状态",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "upload_retry",
+      "name": "上传重试队列",
+      "entity": "重试项",
+      "fields": [
+        "队列编号",
+        "失败原因",
+        "重试次数",
+        "退避间隔",
+        "下次执行"
+      ],
+      "statuses": [
+        "排队中",
+        "重试中",
+        "已放弃"
+      ],
+      "actions": [
+        "执行重试",
+        "放弃重试"
+      ],
+      "action_targets": [
+        "重试中",
+        "已放弃"
+      ],
+      "metrics": [
+        "队列总数",
+        "重试中项",
+        "已放弃项"
+      ],
+      "desc": "对失败上传批次执行退避重试",
+      "page_shape": "job-timeline",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "evidence_pack",
+      "name": "稽核证据包",
+      "entity": "证据包",
+      "fields": [
+        "包编号",
+        "任务标识",
+        "图像清单",
+        "结论清单",
+        "打包指纹"
+      ],
+      "statuses": [
+        "待打包",
+        "已打包",
+        "已分发"
+      ],
+      "actions": [
+        "执行打包",
+        "分发证据"
+      ],
+      "action_targets": [
+        "已打包",
+        "已分发"
+      ],
+      "metrics": [
+        "包总数",
+        "已打包包",
+        "已分发包"
+      ],
+      "desc": "把稽核图像与结论打包成证据包并记录指纹",
+      "page_shape": "dag-graph",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "audit_export",
+      "name": "稽核导出中心",
+      "entity": "导出任务",
+      "fields": [
+        "导出编号",
+        "数据范围",
+        "字段清单",
+        "文件指纹",
+        "导出状态"
+      ],
+      "statuses": [
+        "排队中",
+        "导出中",
+        "已完成"
+      ],
+      "actions": [
+        "开始导出",
+        "标记完成"
+      ],
+      "action_targets": [
+        "导出中",
+        "已完成"
+      ],
+      "metrics": [
+        "任务总数",
+        "导出中任务",
+        "已完成任务"
+      ],
+      "desc": "导出稽核数据集并保留文件指纹",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "score_card",
+      "name": "门店得分卡",
+      "entity": "得分记录",
+      "fields": [
+        "记录编号",
+        "门店标识",
+        "稽核周期",
+        "得分值",
+        "扣分明细"
+      ],
+      "statuses": [
+        "待生成",
+        "已生成",
+        "已公示"
+      ],
+      "actions": [
+        "生成得分",
+        "公示得分"
+      ],
+      "action_targets": [
+        "已生成",
+        "已公示"
+      ],
+      "metrics": [
+        "记录总数",
+        "已生成记录",
+        "已公示记录"
+      ],
+      "desc": "按稽核结论生成门店得分卡与扣分明细",
+      "page_shape": "analysis-dashboard",
+      "_page_shape_explicit": true
+    },
+    {
+      "key": "audit_archive",
+      "name": "稽核归档",
+      "entity": "归档记录",
+      "fields": [
+        "记录编号",
+        "归档范围",
+        "保留期限",
+        "归档位置",
+        "归档指纹"
+      ],
+      "statuses": [
+        "待归档",
+        "已归档",
+        "已清理"
+      ],
+      "actions": [
+        "执行归档",
+        "清理过期"
+      ],
+      "action_targets": [
+        "已归档",
+        "已清理"
+      ],
+      "metrics": [
+        "记录总数",
+        "已归档记录",
+        "已清理记录"
+      ],
+      "desc": "按保留期限归档稽核数据并在到期后清理",
+      "page_shape": "crud-table",
+      "_page_shape_explicit": true
+    }
+  ]
+}
